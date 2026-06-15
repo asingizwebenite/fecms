@@ -1,0 +1,15 @@
+{
+  "name": "fecms-restful",
+  "version": "1.0.0",
+  "description": "Fire Extinguisher Management System - RESTful Microservices",
+  "scripts": {
+    "start": "concurrently \"npm run start --prefix backend/gateway\" \"npm run start --prefix backend/user-service\" \"npm run start --prefix backend/auth-service\" \"npm run start --prefix backend/extinguisher-service\" \"npm run start --prefix backend/inspection-service\" \"npm run start --prefix backend/reporting-service\" \"npm run start --prefix backend/notification-service\"",
+    "dev": "concurrently --names \"GATEWAY,USERS,AUTH,EXTINGUISHER,INSPECTION,REPORTING,NOTIFICATION\" --prefix-colors \"bgBlue,bgGreen,bgYellow,bgMagenta,bgCyan,bgRed,bgWhite\" \"npm run dev --prefix backend/gateway\" \"npm run dev --prefix backend/user-service\" \"npm run dev --prefix backend/auth-service\" \"npm run dev --prefix backend/extinguisher-service\" \"npm run dev --prefix backend/inspection-service\" \"npm run dev --prefix backend/reporting-service\" \"npm run dev --prefix backend/notification-service\"",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:all": "concurrently --names \"GATEWAY,USERS,AUTH,EXTINGUISHER,INSPECTION,REPORTING,NOTIFICATION,FRONTEND\" --prefix-colors \"bgBlue,bgGreen,bgYellow,bgMagenta,bgCyan,bgRed,bgWhite,bgBlack\" \"npm run dev --prefix backend/gateway\" \"npm run dev --prefix backend/user-service\" \"npm run dev --prefix backend/auth-service\" \"npm run dev --prefix backend/extinguisher-service\" \"npm run dev --prefix backend/inspection-service\" \"npm run dev --prefix backend/reporting-service\" \"npm run dev --prefix backend/notification-service\" \"npm run dev --prefix frontend\"",
+    "install:all": "npm install && npm install --prefix backend/gateway && npm install --prefix backend/user-service && npm install --prefix backend/auth-service && npm install --prefix backend/extinguisher-service && npm install --prefix backend/inspection-service && npm install --prefix backend/reporting-service && npm install --prefix backend/notification-service && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

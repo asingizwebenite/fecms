@@ -1,0 +1,38 @@
+require('dotenv').config({ path: '../../.env' });
+const express = require('express');
+const cors = require('cors');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+const sequelize = require('./config/database');
+const authRouter = require('./routes/auth');
+
+const app = express();
+const PORT = process.env.AUTH_SERVICE_PORT || 3002;
+
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true }));
+app.use(express.json());
+
+sequelize
+  .authenticate()
+  .then(() => console.log('📦 Auth Service connected to PostgreSQL'))
+  .catch((err) => console.error('Database error:', err));
+
+const swaggerSpec = swaggerJsdoc({
+  definition: {
+    openapi: '3.0.0',
+    info: { title: 'Authentication Service', version: '1.0.0' },
+    servers: [{ url: `http://localhost:${PORT}` }],
+    components: {
+      securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } },
+    },
+    tags: [{ name: 'Auth', description: 'Authentication endpoints' }],
+  },
+  apis: ['./routes/*.js'],
+});
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api-docs-json', (req, res) => res.json(swaggerSpec));
+app.use('/api/auth', authRouter);
+app.get('/health', (req, res) => res.json({ status: 'up', service: 'auth-service' }));
+
+app.listen(PORT, () => console.log(`🔐 Auth Service running on http://localhost:${PORT}`));
