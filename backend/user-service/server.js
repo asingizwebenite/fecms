@@ -6,6 +6,7 @@ const swaggerUi = require('swagger-ui-express');
 const sequelize = require('./config/database');
 const User = require('./models/User');
 const usersRouter = require('./routes/users');
+const seedAdmin = require('./seeders/adminSeeder');
 
 const app = express();
 const PORT = process.env.USER_SERVICE_PORT || 3001;
@@ -19,7 +20,10 @@ sequelize
     console.log('📦 User Service connected to PostgreSQL');
     return User.sync({ alter: true });
   })
-  .then(() => console.log('✅ Users table synced'))
+  .then(() => {
+    console.log('✅ Users table synced');
+    return seedAdmin();
+  })
   .catch((err) => console.error('Database error:', err));
 
 const swaggerSpec = swaggerJsdoc({
