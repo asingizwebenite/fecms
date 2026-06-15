@@ -14,6 +14,7 @@ const User = sequelize.define(
     role: DataTypes.STRING,
     isActive: DataTypes.BOOLEAN,
     isAccountActivated: DataTypes.BOOLEAN,
+    tokenVersion: DataTypes.INTEGER,
   },
   { tableName: 'users', underscored: false }
 );

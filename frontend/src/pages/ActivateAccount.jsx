@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 
 const styles = {
@@ -40,7 +40,9 @@ const styles = {
 };
 
 export default function ActivateAccount() {
-  const [form, setForm] = useState({ email: '', otp: '', newPassword: '', confirmPassword: '' });
+  const [searchParams] = useSearchParams();
+  const prefillEmail = searchParams.get('email') || '';
+  const [form, setForm] = useState({ email: prefillEmail, otp: '', newPassword: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -69,7 +71,12 @@ export default function ActivateAccount() {
 
   return (
     <div style={styles.page}>
-      <div style={styles.logo}>🔥</div>
+      <div style={styles.logo}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      </div>
       <h1 style={styles.title}>Activate Account</h1>
       <p style={styles.subtitle}>Enter the OTP sent to your email and set a new password</p>
 
@@ -93,9 +100,13 @@ export default function ActivateAccount() {
                 value={form[f.name]}
                 onChange={handleChange}
                 required
-                style={styles.input}
-                onFocus={inputFocus}
-                onBlur={inputBlur}
+                readOnly={f.name === 'email' && !!prefillEmail}
+                style={{
+                  ...styles.input,
+                  ...(f.name === 'email' && prefillEmail ? { background: '#f5f5f5', color: '#888', cursor: 'not-allowed' } : {}),
+                }}
+                onFocus={f.name === 'email' && prefillEmail ? undefined : inputFocus}
+                onBlur={f.name === 'email' && prefillEmail ? undefined : inputBlur}
               />
             </div>
           ))}

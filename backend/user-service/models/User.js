@@ -18,6 +18,7 @@ const User = sequelize.define(
     resetPasswordToken: { type: DataTypes.STRING },
     resetPasswordExpiry: { type: DataTypes.DATE },
     profileImage: { type: DataTypes.STRING },
+    tokenVersion: { type: DataTypes.INTEGER, defaultValue: 1, allowNull: false },
   },
   { tableName: 'users', underscored: false }
 );

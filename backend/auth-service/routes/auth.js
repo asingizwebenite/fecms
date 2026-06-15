@@ -12,7 +12,7 @@ const validate = (req, res, next) => {
 
 const signToken = (user) =>
   jwt.sign(
-    { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName },
+    { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName, tokenVersion: user.tokenVersion },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
@@ -168,7 +168,7 @@ router.post('/verify-token', async (req, res) => {
  * /api/auth/me:
  *   get:
  *     tags: [Auth]
- *     summary: Get the currently authenticated user
+ *     summary: Get the currently authenticated user (All roles)
  *     security: [{ bearerAuth: [] }]
  *     responses:
  *       200:
@@ -176,6 +176,30 @@ router.post('/verify-token', async (req, res) => {
  */
 router.get('/me', authenticate, (req, res) => {
   res.json({ success: true, data: req.user });
+});
+
+// ── Logout ────────────────────────────────────────────────────
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Log out and invalidate the current access token (All roles)
+ *     description: Increments the user's token version so all existing tokens become invalid immediately.
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ *       401:
+ *         description: Not authenticated
+ */
+router.post('/logout', authenticate, async (req, res) => {
+  try {
+    await User.increment('tokenVersion', { by: 1, where: { id: req.user.id } });
+    res.json({ success: true, message: 'Logged out successfully. Your session has been invalidated.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 module.exports = router;

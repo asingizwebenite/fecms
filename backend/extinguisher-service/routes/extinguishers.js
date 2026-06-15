@@ -10,13 +10,14 @@ const validate = (req, res, next) => {
   next();
 };
 
-// ── Register a new extinguisher ───────────────────────────────
+// ── Register a new extinguisher ───────────────────────────────────
 /**
  * @swagger
  * /api/extinguishers:
  *   post:
  *     tags: [Extinguishers]
- *     summary: Register a new fire extinguisher (Admin/Inspector)
+ *     summary: Register a new fire extinguisher (Admin only)
+ *     description: "**Access:** Admin only — Inspectors and Users cannot register new extinguishers"
  *     security: [{ bearerAuth: [] }]
  *     requestBody:
  *       required: true
@@ -27,40 +28,57 @@ const validate = (req, res, next) => {
  *     responses:
  *       201:
  *         description: Extinguisher registered
+ *       403:
+ *         description: Admin role required
+ *       409:
+ *         description: Serial number already registered
  */
 router.post(
   '/',
   authenticate,
-  authorize('Admin', 'Inspector'),
+  authorize('Admin'),
   [
     body('serialNumber').trim().notEmpty().withMessage('Serial number is required'),
     body('location').trim().notEmpty().withMessage('Location is required'),
-    body('type').isIn(['Water', 'CO2', 'Foam', 'Dry Chemical']).withMessage('Invalid type'),
-    body('size').isIn(['1.5 lb', '5 lb', '9 lb', '12 lb']).withMessage('Invalid size'),
-    body('installationDate').isISO8601().withMessage('Valid installation date required'),
-    body('expiryDate').isISO8601().withMessage('Valid expiry date required'),
+    body('type').isIn(['Water', 'CO2', 'Foam', 'Dry Chemical']).withMessage('Type must be one of: Water, CO2, Foam, Dry Chemical'),
+    body('size').isIn(['1.5 lb', '5 lb', '9 lb', '12 lb']).withMessage('Size must be one of: 1.5 lb, 5 lb, 9 lb, 12 lb'),
+    body('installationDate').isISO8601().withMessage('Installation date must be a valid date (YYYY-MM-DD)'),
+    body('expiryDate').isISO8601().withMessage('Expiry date must be a valid date (YYYY-MM-DD)'),
   ],
   validate,
   async (req, res) => {
     try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiryDate = new Date(req.body.expiryDate);
+      const installationDate = new Date(req.body.installationDate);
+
+      if (expiryDate < today) {
+        return res.status(422).json({ success: false, message: 'Expiry date cannot be in the past — the extinguisher is already expired' });
+      }
+      if (installationDate >= expiryDate) {
+        return res.status(422).json({ success: false, message: 'Installation date must be before the expiry date' });
+      }
+
       const exists = await Extinguisher.findOne({ where: { serialNumber: req.body.serialNumber } });
-      if (exists) return res.status(409).json({ success: false, message: 'Serial number already registered' });
+      if (exists) return res.status(409).json({ success: false, message: `Serial number "${req.body.serialNumber}" is already registered` });
 
       const extinguisher = await Extinguisher.create({ ...req.body, createdBy: req.user.id });
-      res.status(201).json({ success: true, message: 'Fire extinguisher registered', data: extinguisher });
+      res.status(201).json({ success: true, message: 'Fire extinguisher registered successfully', data: extinguisher });
     } catch (err) {
       res.status(500).json({ success: false, message: err.message });
     }
   }
 );
 
-// ── List all extinguishers ────────────────────────────────────
+// ── List all extinguishers ────────────────────────────────────────
 /**
  * @swagger
  * /api/extinguishers:
  *   get:
  *     tags: [Extinguishers]
- *     summary: List all fire extinguishers
+ *     summary: List all fire extinguishers with filtering and pagination (All roles)
+ *     description: "**Access:** Admin, Inspector, User"
  *     security: [{ bearerAuth: [] }]
  *     parameters:
  *       - in: query
@@ -72,6 +90,7 @@ router.post(
  *       - in: query
  *         name: location
  *         schema: { type: string }
+ *         description: Partial match search on location
  *       - in: query
  *         name: page
  *         schema: { type: integer, default: 1 }
@@ -80,7 +99,7 @@ router.post(
  *         schema: { type: integer, default: 20 }
  *     responses:
  *       200:
- *         description: List of extinguishers
+ *         description: Paginated list of extinguishers
  */
 router.get('/', authenticate, async (req, res) => {
   try {
@@ -103,13 +122,14 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// ── Get extinguisher by ID ────────────────────────────────────
+// ── Get extinguisher by ID ────────────────────────────────────────
 /**
  * @swagger
  * /api/extinguishers/{id}:
  *   get:
  *     tags: [Extinguishers]
- *     summary: Get a fire extinguisher by ID
+ *     summary: Get a fire extinguisher by ID (All roles)
+ *     description: "**Access:** Admin, Inspector, User"
  *     security: [{ bearerAuth: [] }]
  *     parameters:
  *       - in: path
@@ -119,6 +139,8 @@ router.get('/', authenticate, async (req, res) => {
  *     responses:
  *       200:
  *         description: Extinguisher details
+ *       404:
+ *         description: Extinguisher not found
  */
 router.get('/:id', authenticate, async (req, res) => {
   try {
@@ -130,13 +152,17 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-// ── Update extinguisher ───────────────────────────────────────
+// ── Update extinguisher ───────────────────────────────────────────
 /**
  * @swagger
  * /api/extinguishers/{id}:
  *   put:
  *     tags: [Extinguishers]
- *     summary: Update fire extinguisher information (Admin/Inspector)
+ *     summary: Update fire extinguisher information (Admin or Inspector)
+ *     description: |
+ *       **Access:** Admin, Inspector
+ *       - **Admin** can update all fields (location, type, size, dates, status, notes)
+ *       - **Inspector** can only update: `status`, `notes`, `lastInspectionDate`, `nextInspectionDate`
  *     security: [{ bearerAuth: [] }]
  *     parameters:
  *       - in: path
@@ -151,25 +177,75 @@ router.get('/:id', authenticate, async (req, res) => {
  *     responses:
  *       200:
  *         description: Extinguisher updated
+ *       400:
+ *         description: No valid fields provided
+ *       403:
+ *         description: Admin or Inspector role required
+ *       404:
+ *         description: Extinguisher not found
  */
 router.put('/:id', authenticate, authorize('Admin', 'Inspector'), async (req, res) => {
   try {
     const extinguisher = await Extinguisher.findByPk(req.params.id);
     if (!extinguisher) return res.status(404).json({ success: false, message: 'Extinguisher not found' });
-    await extinguisher.update(req.body);
-    res.json({ success: true, message: 'Extinguisher updated', data: extinguisher });
+
+    let update;
+
+    if (req.user.role === 'Inspector') {
+      // Inspectors may only update operational fields — not structural/admin details
+      const { status, notes, lastInspectionDate, nextInspectionDate } = req.body;
+      update = {};
+      if (status !== undefined) update.status = status;
+      if (notes !== undefined) update.notes = notes;
+      if (lastInspectionDate !== undefined) update.lastInspectionDate = lastInspectionDate;
+      if (nextInspectionDate !== undefined) update.nextInspectionDate = nextInspectionDate;
+
+      if (Object.keys(update).length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Inspectors can only update the following fields: status, notes, lastInspectionDate, nextInspectionDate',
+        });
+      }
+
+      if (update.status && !['Active', 'Expired', 'Under Maintenance', 'Decommissioned'].includes(update.status)) {
+        return res.status(422).json({ success: false, message: 'Status must be one of: Active, Expired, Under Maintenance, Decommissioned' });
+      }
+    } else {
+      // Admin full update with date validation
+      update = { ...req.body };
+
+      if (Object.keys(update).length === 0) {
+        return res.status(400).json({ success: false, message: 'No fields provided to update' });
+      }
+
+      const expiryDate = update.expiryDate ? new Date(update.expiryDate) : new Date(extinguisher.expiryDate);
+      const installationDate = update.installationDate ? new Date(update.installationDate) : new Date(extinguisher.installationDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (expiryDate < today) {
+        return res.status(422).json({ success: false, message: 'Expiry date cannot be in the past — the extinguisher is already expired' });
+      }
+      if (installationDate >= expiryDate) {
+        return res.status(422).json({ success: false, message: 'Installation date must be before the expiry date' });
+      }
+    }
+
+    await extinguisher.update(update);
+    res.json({ success: true, message: 'Extinguisher updated successfully', data: extinguisher });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// ── Delete extinguisher ───────────────────────────────────────
+// ── Delete extinguisher ───────────────────────────────────────────
 /**
  * @swagger
  * /api/extinguishers/{id}:
  *   delete:
  *     tags: [Extinguishers]
- *     summary: Delete a fire extinguisher (Admin only)
+ *     summary: Delete a fire extinguisher permanently (Admin only)
+ *     description: "**Access:** Admin only — Inspectors and Users cannot delete extinguisher records"
  *     security: [{ bearerAuth: [] }]
  *     parameters:
  *       - in: path
@@ -179,13 +255,17 @@ router.put('/:id', authenticate, authorize('Admin', 'Inspector'), async (req, re
  *     responses:
  *       200:
  *         description: Extinguisher deleted
+ *       403:
+ *         description: Admin role required
+ *       404:
+ *         description: Extinguisher not found
  */
 router.delete('/:id', authenticate, authorize('Admin'), async (req, res) => {
   try {
     const extinguisher = await Extinguisher.findByPk(req.params.id);
     if (!extinguisher) return res.status(404).json({ success: false, message: 'Extinguisher not found' });
     await extinguisher.destroy();
-    res.json({ success: true, message: 'Extinguisher deleted' });
+    res.json({ success: true, message: 'Extinguisher deleted successfully' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

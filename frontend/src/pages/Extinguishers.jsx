@@ -18,7 +18,7 @@ export default function Extinguishers() {
   const [statusFilter, setStatusFilter] = useState('');
   const [error, setError] = useState('');
 
-  const canEdit = ['Admin', 'Inspector'].includes(user?.role);
+  const isAdmin = user?.role === 'Admin';
 
   const fetchData = () => {
     setLoading(true);
@@ -34,7 +34,7 @@ export default function Extinguishers() {
   useEffect(() => { fetchData(); }, [statusFilter]);
 
   const openAdd = () => { setForm(EMPTY_FORM); setEditId(null); setError(''); setShowModal(true); };
-  const openEdit = (item) => { setForm({ ...item, installationDate: item.installationDate?.split('T')[0], expiryDate: item.expiryDate?.split('T')[0] }); setEditId(item._id); setError(''); setShowModal(true); };
+  const openEdit = (item) => { setForm({ ...item, installationDate: item.installationDate?.split('T')[0], expiryDate: item.expiryDate?.split('T')[0] }); setEditId(item.id); setError(''); setShowModal(true); };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setError('');
@@ -50,8 +50,12 @@ export default function Extinguishers() {
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this extinguisher?')) return;
-    await api.delete(`/extinguishers/${id}`);
-    fetchData();
+    try {
+      await api.delete(`/extinguishers/${id}`);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete');
+    }
   };
 
   const inputStyle = { width: '100%', padding: '9px 12px', border: '1.5px solid #e5e7eb', borderRadius: 8, fontSize: 14, outline: 'none', background: '#fff' };
@@ -64,7 +68,7 @@ export default function Extinguishers() {
           <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a2e' }}>Fire Extinguishers</h1>
           <p style={{ color: '#666', fontSize: 13 }}>Manage all fire extinguisher records</p>
         </div>
-        {canEdit && (
+        {isAdmin && (
           <button onClick={openAdd} style={{ background: '#C0392B', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
             + Register New
           </button>
@@ -89,7 +93,7 @@ export default function Extinguishers() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8f9fa' }}>
-                {['Serial No.', 'Location', 'Type', 'Size', 'Expiry Date', 'Status', canEdit ? 'Actions' : ''].filter(Boolean).map((h) => (
+                {['Serial No.', 'Location', 'Type', 'Size', 'Expiry Date', 'Status', isAdmin ? 'Actions' : ''].filter(Boolean).map((h) => (
                   <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
               </tr>
@@ -98,7 +102,7 @@ export default function Extinguishers() {
               {items.length === 0 ? (
                 <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: '#999' }}>No extinguishers found</td></tr>
               ) : items.map((item, i) => (
-                <tr key={item._id} style={{ borderTop: '1px solid #f0f0f0', background: i % 2 ? '#fafafa' : '#fff' }}>
+                <tr key={item.id} style={{ borderTop: '1px solid #f0f0f0', background: i % 2 ? '#fafafa' : '#fff' }}>
                   <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 600, color: '#333' }}>{item.serialNumber}</td>
                   <td style={{ padding: '12px 16px', fontSize: 14, color: '#555' }}>{item.location}</td>
                   <td style={{ padding: '12px 16px', fontSize: 14, color: '#555' }}>{item.type}</td>
@@ -107,10 +111,10 @@ export default function Extinguishers() {
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{ fontSize: 12, fontWeight: 700, background: `${STATUS_COLORS[item.status]}18`, color: STATUS_COLORS[item.status], padding: '3px 10px', borderRadius: 20 }}>{item.status}</span>
                   </td>
-                  {canEdit && (
+                  {isAdmin && (
                     <td style={{ padding: '12px 16px', display: 'flex', gap: 8 }}>
                       <button onClick={() => openEdit(item)} style={{ padding: '5px 12px', background: '#3498DB', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>Edit</button>
-                      {user?.role === 'Admin' && <button onClick={() => handleDelete(item._id)} style={{ padding: '5px 12px', background: '#E74C3C', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>Delete</button>}
+                      <button onClick={() => handleDelete(item.id)} style={{ padding: '5px 12px', background: '#E74C3C', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>Delete</button>
                     </td>
                   )}
                 </tr>

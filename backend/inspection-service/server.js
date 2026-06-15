@@ -44,4 +44,14 @@ app.use('/api/inspections', inspectionsRouter);
 app.use('/api/maintenance', maintenanceRouter);
 app.get('/health', (req, res) => res.json({ status: 'up', service: 'inspection-service' }));
 
+app.use((err, req, res, next) => {
+  console.error(`[${new Date().toISOString()}] ${req.method} ${req.path} — ${err.message}`);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    success: false,
+    message: err.message || 'An unexpected error occurred',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
+});
+
 app.listen(PORT, () => console.log(`Inspection Service running on http://localhost:${PORT}`));

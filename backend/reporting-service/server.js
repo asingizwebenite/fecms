@@ -33,4 +33,14 @@ app.get('/api-docs-json', (req, res) => res.json(swaggerSpec));
 app.use('/api/reports', reportsRouter);
 app.get('/health', (req, res) => res.json({ status: 'up', service: 'reporting-service' }));
 
+app.use((err, req, res, next) => {
+  console.error(`[${new Date().toISOString()}] ${req.method} ${req.path} — ${err.message}`);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    success: false,
+    message: err.message || 'An unexpected error occurred',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
+});
+
 app.listen(PORT, () => console.log(`Reporting Service running on http://localhost:${PORT}`));
