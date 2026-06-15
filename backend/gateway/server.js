@@ -115,6 +115,6 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🔀 API Gateway running on http://localhost:${PORT}`);
-  console.log(`📚 Swagger UI at http://localhost:${PORT}/api-docs`);
+  console.log(`API Gateway running on http://localhost:${PORT}`);
+  console.log(`Swagger UI at http://localhost:${PORT}/api-docs`);
 });

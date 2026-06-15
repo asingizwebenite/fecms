@@ -26,4 +26,4 @@ app.get('/api-docs-json', (req, res) => res.json(swaggerSpec));
 app.use('/api/notifications', notificationsRouter);
 app.get('/health', (req, res) => res.json({ status: 'up', service: 'notification-service' }));
 
-app.listen(PORT, () => console.log(`📧 Notification Service running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Notification Service running on http://localhost:${PORT}`));

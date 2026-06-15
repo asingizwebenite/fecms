@@ -16,10 +16,10 @@ app.use(express.json());
 sequelize
   .authenticate()
   .then(() => {
-    console.log('📦 Extinguisher Service connected to PostgreSQL');
+    console.log('Extinguisher Service connected to PostgreSQL');
     return Extinguisher.sync({ alter: true });
   })
-  .then(() => console.log('✅ Extinguishers table synced'))
+  .then(() => console.log('Extinguishers table synced'))
   .catch((err) => console.error('Database error:', err));
 
 const swaggerSpec = swaggerJsdoc({
@@ -56,4 +56,4 @@ app.get('/api-docs-json', (req, res) => res.json(swaggerSpec));
 app.use('/api/extinguishers', extinguishersRouter);
 app.get('/health', (req, res) => res.json({ status: 'up', service: 'extinguisher-service' }));
 
-app.listen(PORT, () => console.log(`🧯 Extinguisher Service running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Extinguisher Service running on http://localhost:${PORT}`));

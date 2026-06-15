@@ -17,11 +17,11 @@ app.use(express.json());
 sequelize
   .authenticate()
   .then(() => {
-    console.log('📦 User Service connected to PostgreSQL');
+    console.log('User Service connected to PostgreSQL');
     return User.sync({ alter: true });
   })
   .then(() => {
-    console.log('✅ Users table synced');
+    console.log('Users table synced');
     return seedAdmin();
   })
   .catch((err) => console.error('Database error:', err));
@@ -44,4 +44,4 @@ app.get('/api-docs-json', (req, res) => res.json(swaggerSpec));
 app.use('/api/users', usersRouter);
 app.get('/health', (req, res) => res.json({ status: 'up', service: 'user-service' }));
 
-app.listen(PORT, () => console.log(`👤 User Service running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`User Service running on http://localhost:${PORT}`));

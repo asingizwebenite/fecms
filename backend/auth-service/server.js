@@ -14,7 +14,7 @@ app.use(express.json());
 
 sequelize
   .authenticate()
-  .then(() => console.log('📦 Auth Service connected to PostgreSQL'))
+  .then(() => console.log('Auth Service connected to PostgreSQL'))
   .catch((err) => console.error('Database error:', err));
 
 const swaggerSpec = swaggerJsdoc({
@@ -35,4 +35,4 @@ app.get('/api-docs-json', (req, res) => res.json(swaggerSpec));
 app.use('/api/auth', authRouter);
 app.get('/health', (req, res) => res.json({ status: 'up', service: 'auth-service' }));
 
-app.listen(PORT, () => console.log(`🔐 Auth Service running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Auth Service running on http://localhost:${PORT}`));

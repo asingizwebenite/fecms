@@ -7,13 +7,13 @@ async function seedAdmin() {
   const password = process.env.ADMIN_PASSWORD;
 
   if (!email || !password) {
-    console.warn('⚠️  ADMIN_EMAIL or ADMIN_PASSWORD not set — skipping admin seed');
+    console.warn('ADMIN_EMAIL or ADMIN_PASSWORD not set — skipping admin seed');
     return;
   }
 
   const existingAdmin = await User.findOne({ where: { role: 'Admin' } });
   if (existingAdmin) {
-    console.log(`✅ Admin already exists (${existingAdmin.email}) — skipping seed`);
+    console.log(`Admin already exists (${existingAdmin.email}) — skipping seed`);
     return;
   }
 
@@ -27,7 +27,7 @@ async function seedAdmin() {
     isAccountActivated: true,
   });
 
-  console.log(`🌱 Admin seeded: ${email}`);
+  console.log(`Admin seeded: ${email}`);
 }
 
 module.exports = seedAdmin;

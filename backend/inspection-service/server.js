@@ -18,10 +18,10 @@ app.use(express.json());
 sequelize
   .authenticate()
   .then(() => {
-    console.log('📦 Inspection Service connected to PostgreSQL');
+    console.log('Inspection Service connected to PostgreSQL');
     return sequelize.sync({ alter: true });
   })
-  .then(() => console.log('✅ Inspection/Maintenance tables synced'))
+  .then(() => console.log('Inspection/Maintenance tables synced'))
   .catch((err) => console.error('Database error:', err));
 
 const swaggerSpec = swaggerJsdoc({
@@ -44,4 +44,4 @@ app.use('/api/inspections', inspectionsRouter);
 app.use('/api/maintenance', maintenanceRouter);
 app.get('/health', (req, res) => res.json({ status: 'up', service: 'inspection-service' }));
 
-app.listen(PORT, () => console.log(`🔍 Inspection Service running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Inspection Service running on http://localhost:${PORT}`));
